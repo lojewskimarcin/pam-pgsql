@@ -56,14 +56,16 @@ typedef struct modopt_s {
 	int pw_type;
    int debug;
 	int std_flags;
+	char *authtok_type;
 
 } modopt_t;
 
 modopt_t * mod_options(int , const char **);
 
 
-int  pam_get_pass(pam_handle_t *, int, const char **, const char *, int);
-int  pam_get_confirm_pass(pam_handle_t *, const char **, const char *,  const char *, int);
+int  pam_get_pass(pam_handle_t *, int, const char **, const char *, int, const char *);
+int  pam_get_confirm_pass(pam_handle_t *, const char **, const char *, const char *, int, const char *);
 const char *pam_get_service(pam_handle_t *pamh);
+void get_prompt(const char *, const char *, char **);
 
 #endif

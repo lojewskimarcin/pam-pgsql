@@ -31,6 +31,7 @@
  */
 
 /* $Id: pam_get_pass.c,v 1.2 2000/06/25 09:39:28 ljb Exp $ */
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <security/pam_modules.h>
@@ -72,10 +73,11 @@ pam_conv_pass(pam_handle_t *pamh, int pam_item, const char *prompt, int options)
 }
 
 int
-pam_get_pass(pam_handle_t *pamh, int pam_item, const char **passp, const char *prompt,
-    int options)
+pam_get_pass(pam_handle_t *pamh, int pam_item, const char **passp, const char *prompt_template,
+    int options, const char *authtok_type)
 {
     int retval;
+    char *prompt;
     const void *item = NULL;
 
     /*
@@ -91,9 +93,11 @@ pam_get_pass(pam_handle_t *pamh, int pam_item, const char **passp, const char *p
         /* The user hasn't entered a password yet. */
         if ((pam_item == PAM_AUTHTOK) && (options & PAM_OPT_USE_FIRST_PASS)) 
             return PAM_AUTH_ERR;
+        get_prompt(prompt_template, authtok_type, &prompt);
+        retval = pam_conv_pass(pamh, pam_item, prompt, options);
+        free(prompt);
         /* Use the conversation function to get a password. */
-        if ((retval = pam_conv_pass(pamh, pam_item, prompt, options)) !=
-            PAM_SUCCESS ||
+        if (retval != PAM_SUCCESS ||
             (retval = pam_get_item(pamh, pam_item, &item)) !=
             PAM_SUCCESS)  
             return retval;
@@ -103,7 +107,7 @@ pam_get_pass(pam_handle_t *pamh, int pam_item, const char **passp, const char *p
 }  
 
 int
-pam_get_confirm_pass(pam_handle_t *pamh, const char **passp, const char *prompt1, const char *prompt2, int options)
+pam_get_confirm_pass(pam_handle_t *pamh, const char **passp, const char *prompt_template1, const char *prompt_template2, int options, const char *authtok_type)
 {
     int retval = PAM_AUTH_ERR;
     int i;
@@ -112,6 +116,7 @@ pam_get_confirm_pass(pam_handle_t *pamh, const char **passp, const char *prompt1
     struct pam_message msgs[2];
     const struct pam_message *pmsgs[2];
     struct pam_response *resp;
+    char *prompt1, *prompt2;
 
     /* Grab the already-entered password if we might want to use it.*/
 	if (options & (PAM_OPT_TRY_FIRST_PASS | PAM_OPT_USE_FIRST_PASS)) {
@@ -132,13 +137,19 @@ pam_get_confirm_pass(pam_handle_t *pamh, const char **passp, const char *prompt1
 		for(i = 0; i < 2; i++)
 			msgs[i].msg_style = (options & PAM_OPT_ECHO_PASS) ? PAM_PROMPT_ECHO_ON : PAM_PROMPT_ECHO_OFF;
 
+		get_prompt(prompt_template1, authtok_type, &prompt1);
+		get_prompt(prompt_template2, authtok_type, &prompt2);
+
 		msgs[0].msg = prompt1;
 		msgs[1].msg = prompt2;
 		pmsgs[0] = &msgs[0];
 		pmsgs[1] = &msgs[1];
 
-		if((retval = conv->conv(2, pmsgs, &resp, conv->appdata_ptr)) != PAM_SUCCESS)
-			return retval;     
+		retval = conv->conv(2, pmsgs, &resp, conv->appdata_ptr);
+		free(prompt1);
+		free(prompt2);
+		if(retval != PAM_SUCCESS)
+			return retval;
 
 		if(!resp)
 			return PAM_AUTHTOK_RECOVERY_ERR;
@@ -161,4 +172,22 @@ pam_get_confirm_pass(pam_handle_t *pamh, const char **passp, const char *prompt1
 	*passp = item;
 
 	return retval;
+}
+
+void get_prompt(const char *prompt_template, const char *authtok_type, char **prompt) {
+    if (authtok_type) {
+        *prompt = (char *) malloc(strlen(prompt_template) + strlen(authtok_type) - 1);
+        char *new_authtok_type;
+        new_authtok_type = malloc(strlen(authtok_type) + 2);
+        strcpy(new_authtok_type, authtok_type);
+        strcat(new_authtok_type, " ");
+        sprintf(*prompt, prompt_template, new_authtok_type);
+        free(new_authtok_type);
+    } else {
+        *prompt = (char *) malloc(strlen(prompt_template) - 1);
+        sprintf(*prompt, prompt_template, "");
+        if (*prompt[0] > 96 && *prompt[0] < 123) { // First letter to uppercase
+            *prompt[0] -= 32;
+        }
+    }
 }

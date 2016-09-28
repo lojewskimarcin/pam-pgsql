@@ -54,7 +54,7 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **argv)
 			if ((options = mod_options(argc, argv)) != NULL) {
 
 				DBGLOG("attempting to authenticate: %s, %s", user, options->query_auth);
-				if ((rc = pam_get_pass(pamh, PAM_AUTHTOK, &password, PASSWORD_PROMPT, options->std_flags)) == PAM_SUCCESS) {
+				if ((rc = pam_get_pass(pamh, PAM_AUTHTOK, &password, PASSWORD_PROMPT, options->std_flags, options->authtok_type)) == PAM_SUCCESS) {
 
 					if ((rc = backend_authenticate(pam_get_service(pamh), user, password, rhost, options)) == PAM_SUCCESS) {
 						if ((password == 0 || *password == 0) && (flags & PAM_DISALLOW_NULL_AUTHTOK)) {
@@ -186,7 +186,7 @@ pam_sm_chauthtok(pam_handle_t *pamh, int flags, int argc, const char **argv)
 
 	if ((rc == PAM_SUCCESS) && (flags & PAM_PRELIM_CHECK)) {
 		if (getuid() != 0) {
-			if ((rc = pam_get_pass(pamh, PAM_OLDAUTHTOK, &pass, PASSWORD_PROMPT, options->std_flags)) == PAM_SUCCESS) {
+			if ((rc = pam_get_pass(pamh, PAM_OLDAUTHTOK, &pass, PASSWORD_PROMPT, options->std_flags, options->authtok_type)) == PAM_SUCCESS) {
 				rc = backend_authenticate(pam_get_service(pamh), user, pass, rhost, options);
 			} else {
 				SYSLOG("could not retrieve password from '%s'", user);
@@ -215,7 +215,7 @@ pam_sm_chauthtok(pam_handle_t *pamh, int flags, int argc, const char **argv)
 
 		if (rc == PAM_SUCCESS) {
 
-			if ((rc = pam_get_confirm_pass(pamh, &newpass, PASSWORD_PROMPT_NEW, PASSWORD_PROMPT_CONFIRM, options->std_flags)) == PAM_SUCCESS) {
+			if ((rc = pam_get_confirm_pass(pamh, &newpass, PASSWORD_PROMPT_NEW, PASSWORD_PROMPT_CONFIRM, options->std_flags, options->authtok_type)) == PAM_SUCCESS) {
 				if((newpass_crypt = password_encrypt(options, user, newpass, NULL))) {
 					if(!(conn = db_connect(options))) {
 						rc = PAM_AUTHINFO_UNAVAIL;

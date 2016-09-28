@@ -118,6 +118,8 @@ read_config_file(modopt_t *options) {
             }
         } else if(!strcmp(buffer, "debug")) {
             options->debug = 1;
+        } else if(!strcmp(buffer, "authtok_type")) {
+            options->authtok_type = strdup(val);
         }
 
     }
@@ -175,6 +177,7 @@ modopt_t * mod_options(int argc, const char **argv) {
     modopt->port = strdup("5432");
     modopt->debug = 0;
     modopt->std_flags = 0;
+    modopt->authtok_type = NULL;
 
     for(i=0; i<argc; i++) {
 
@@ -299,7 +302,7 @@ modopt_t * mod_options(int argc, const char **argv) {
 }
 
 
-static void free_mod_options(modopt_t *options) {
+/*static void free_mod_options(modopt_t *options) {
 
     if(options == NULL)
         return;
@@ -307,4 +310,4 @@ static void free_mod_options(modopt_t *options) {
 
     return;
 
-}
+}*/
