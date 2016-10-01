@@ -135,7 +135,7 @@ pam_sm_acct_mgmt(pam_handle_t *pamh, int flags, int argc,
 					rc = PAM_AUTH_ERR;
 					if(pg_execParam(conn, &res, options->query_acct, pam_get_service(pamh), user, NULL, rhost) == PAM_SUCCESS) {
 						if (PQntuples(res) == 1 &&
-						    PQnfields(res) >= 2 && PQnfields(res) <= 3) {
+						    PQnfields(res) >= 3 && PQnfields(res) <= 4) {
 							char *expired_db = PQgetvalue(res, 0, 0);
 							char *newtok_db = PQgetvalue(res, 0, 1);
 							rc = PAM_SUCCESS;
@@ -148,8 +148,12 @@ pam_sm_acct_mgmt(pam_handle_t *pamh, int flags, int argc,
 								rc = PAM_NEW_AUTHTOK_REQD;
 							if (!strcmp(expired_db, "t"))
 								rc = PAM_ACCT_EXPIRED;
+							if (PQnfields(res)>=4) {
+								char *perm_denied = PQgetvalue(res, 0, 3);
+								if (!strcmp(perm_denied, "t")) rc = PAM_PERM_DENIED;
+							}
 						} else {
-							DBGLOG("query_acct should return one row and two or three columns");
+							DBGLOG("query_acct should return one row and three or four columns");
 							rc = PAM_PERM_DENIED;
 						}
 						PQclear(res);
