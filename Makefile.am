@@ -19,7 +19,9 @@ pam_pgsql_la_SOURCES = \
 			src/backend_pgsql.c \
 			src/backend_pgsql.h \
 			src/pam_get_service.c \
-			src/pam_get_pass.c
+			src/pam_get_pass.c \
+			src/crypt_blowfish.c \
+			src/crypt_blowfish.h
 
 if HAVE_PAM_CONV
 EXTRA_PROGRAMS = authenticate chpass

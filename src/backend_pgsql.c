@@ -28,6 +28,7 @@
 
 #include "backend_pgsql.h"
 #include "pam_pgsql.h"
+#include "crypt_blowfish.h"
 
 static char *
 crypt_makesalt(pw_scheme scheme);
@@ -343,6 +344,10 @@ password_encrypt(modopt_t *options, const char *user, const char *pass, const ch
 				sprintf(&s[i * 2], "%.2x", hash[i]);
 		}
 		break;
+        case PW_BCRYPT:
+            s = (char *) malloc(61); /* 60 bytes + 1 byte for \0 */
+            _crypt_blowfish_rn(pass, salt, s, 61);
+            break;
 		case PW_CLEAR:
 		case PW_FUNCTION:
 		default:
