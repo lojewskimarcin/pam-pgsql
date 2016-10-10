@@ -138,12 +138,10 @@ pam_sm_acct_mgmt(pam_handle_t *pamh, int flags, int argc,
 						    PQnfields(res) >= 3 && PQnfields(res) <= 4) {
 							char *expired_db = PQgetvalue(res, 0, 0);
 							char *newtok_db = PQgetvalue(res, 0, 1);
+							char *nulltok_db = PQgetvalue(res, 0, 2);
 							rc = PAM_SUCCESS;
-							if (PQnfields(res)>=3) {
-								char *nulltok_db = PQgetvalue(res, 0, 2);
-								if ((!strcmp(nulltok_db, "t")) && (flags & PAM_DISALLOW_NULL_AUTHTOK))
-									rc = PAM_NEW_AUTHTOK_REQD;
-							}
+							if ((!strcmp(nulltok_db, "t")) && (flags & PAM_DISALLOW_NULL_AUTHTOK))
+								rc = PAM_NEW_AUTHTOK_REQD;
 							if (!strcmp(newtok_db, "t"))
 								rc = PAM_NEW_AUTHTOK_REQD;
 							if (!strcmp(expired_db, "t"))

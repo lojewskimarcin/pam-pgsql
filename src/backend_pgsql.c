@@ -179,6 +179,7 @@ expand_query (char **command, const char** values, const char *query, const char
 					q += strlen (q);
 					p++;
 				}
+				break;
 				case '%':
 				default:
 					*q++ = *p++;
