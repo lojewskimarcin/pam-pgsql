@@ -86,7 +86,7 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **argv)
 	if (rc == PAM_SUCCESS) {
 		if (options->query_auth_succ) {
 			if ((conn = db_connect(options))) {
-				pg_execParam(conn, &res, options->query_auth_succ, pam_get_service(pamh), user, password, rhost);
+				pg_execParam(conn, &res, options->query_auth_succ, pam_get_service(pamh), user, password, rhost, options->custom_param);
 				PQclear(res);
 				PQfinish(conn);
 			}
@@ -94,7 +94,7 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **argv)
 	} else {
 		if (options->query_auth_fail) {
 			if ((conn = db_connect(options))) {
-				pg_execParam(conn, &res, options->query_auth_fail, pam_get_service(pamh), user, password, rhost);
+				pg_execParam(conn, &res, options->query_auth_fail, pam_get_service(pamh), user, password, rhost, options->custom_param);
 				PQclear(res);
 				PQfinish(conn);
 			}
@@ -133,7 +133,7 @@ pam_sm_acct_mgmt(pam_handle_t *pamh, int flags, int argc,
 				} else {
 					DBGLOG("query: %s", options->query_acct);
 					rc = PAM_AUTH_ERR;
-					if(pg_execParam(conn, &res, options->query_acct, pam_get_service(pamh), user, NULL, rhost) == PAM_SUCCESS) {
+					if(pg_execParam(conn, &res, options->query_acct, pam_get_service(pamh), user, NULL, rhost, options->custom_param) == PAM_SUCCESS) {
 						if (PQntuples(res) == 1 &&
 						    PQnfields(res) >= 3 && PQnfields(res) <= 4) {
 							char *expired_db = PQgetvalue(res, 0, 0);
@@ -226,7 +226,7 @@ pam_sm_chauthtok(pam_handle_t *pamh, int flags, int argc, const char **argv)
 					}
 					if (rc == PAM_SUCCESS) {
 						DBGLOG("query: %s", options->query_pwd);
-						if(pg_execParam(conn, &res, options->query_pwd, pam_get_service(pamh), user, newpass_crypt, rhost) != PAM_SUCCESS) {
+						if(pg_execParam(conn, &res, options->query_pwd, pam_get_service(pamh), user, newpass_crypt, rhost, options->custom_param) != PAM_SUCCESS) {
 							rc = PAM_AUTH_ERR;
 						} else {
 							SYSLOG("(%s) password for '%s' was changed.", pam_get_service(pamh), user);
@@ -279,7 +279,7 @@ pam_sm_open_session(pam_handle_t *pamh, int flags,
 				if ((rc = pam_get_user(pamh, &user, NULL)) == PAM_SUCCESS) {
 					DBGLOG("Session opened for user: %s", user);
 					if ((conn = db_connect(options))) {
-						pg_execParam(conn, &res, options->query_session_open, pam_get_service(pamh), user, NULL, rhost);
+						pg_execParam(conn, &res, options->query_session_open, pam_get_service(pamh), user, NULL, rhost, options->custom_param);
 						PQclear(res);
 						PQfinish(conn);
 					}
@@ -314,7 +314,7 @@ pam_sm_close_session(pam_handle_t *pamh, int flags,
 				if ((rc = pam_get_user(pamh, &user, NULL)) == PAM_SUCCESS) {
 					DBGLOG("Session opened for user: %s", user);
 					if ((conn = db_connect(options))) {
-                          pg_execParam(conn, &res, options->query_session_close, pam_get_service(pamh), user, NULL, rhost);
+                          pg_execParam(conn, &res, options->query_session_close, pam_get_service(pamh), user, NULL, rhost, options->custom_param);
                           PQclear(res);
                           PQfinish(conn);
 					}

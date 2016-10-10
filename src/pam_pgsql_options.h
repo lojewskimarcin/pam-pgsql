@@ -57,6 +57,7 @@ typedef struct modopt_s {
    int debug;
 	int std_flags;
 	char *authtok_type;
+	char *custom_param;
 
 } modopt_t;
 

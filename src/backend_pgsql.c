@@ -97,7 +97,7 @@ db_connect(modopt_t *options)
 /* private: expand query; partially stolen from mailutils */
 
 static int
-expand_query (char **command, const char** values, const char *query, const char *service, const char *user, const char *passwd, const char *rhost, const char *raddr)
+expand_query (char **command, const char** values, const char *query, const char *service, const char *user, const char *passwd, const char *rhost, const char *raddr, const char *cparam)
 {
 	char *p, *q, *res;
 	unsigned int len;
@@ -173,6 +173,12 @@ expand_query (char **command, const char** values, const char *query, const char
 					}
 				}
 				break;
+				case 'c': {
+					sprintf(q, "$%i", ++nparm);
+					values[nparm-1] = cparam;
+					q += strlen (q);
+					p++;
+				}
 				case '%':
 				default:
 					*q++ = *p++;
@@ -190,7 +196,7 @@ expand_query (char **command, const char** values, const char *query, const char
 /* private: execute query */
 int
 pg_execParam(PGconn *conn, PGresult **res, 
-        const char *query, const char *service, const char *user, const char *passwd, const char *rhost)
+        const char *query, const char *service, const char *user, const char *passwd, const char *rhost, const char *cparam)
 {
 	int nparm = 0;
 	const char *values[128];
@@ -209,7 +215,7 @@ pg_execParam(PGconn *conn, PGresult **res,
 		inet_ntop(AF_INET, hentry->h_addr_list[0], raddr, INET_ADDRSTRLEN);
 	}
 	
-	nparm = expand_query(&command, values, query, service, user, passwd, rhost, raddr);
+	nparm = expand_query(&command, values, query, service, user, passwd, rhost, raddr, cparam);
 	if (command == NULL) 
 		return PAM_AUTH_ERR;
 	
@@ -255,7 +261,7 @@ backend_authenticate(const char *service, const char *user, const char *passwd, 
 
 	DBGLOG("query: %s", options->query_auth);
 	rc = PAM_AUTH_ERR;	
-	if(pg_execParam(conn, &res, options->query_auth, service, user, passwd, rhost) == PAM_SUCCESS) {
+	if(pg_execParam(conn, &res, options->query_auth, service, user, passwd, rhost, options->custom_param) == PAM_SUCCESS) {
 		if(PQntuples(res) == 0) {
 			rc = PAM_USER_UNKNOWN;
 		} else if (!PQgetisnull(res, 0, 0)) {

@@ -110,8 +110,9 @@ Configuration Options
 			  overrides other settings related to changing password
 
 You can use %u as username, %p as (new) password, %h for hostname of client
-as specified by PAM subsystem, %i for IP got by gethostbyname(%h) and %s as
-pa service name in any query. Please don't forget to specify pw_type as %p
+as specified by PAM subsystem, %i for IP got by gethostbyname(%h), %s as
+pa service name and %c as a custom parameter (see option below) in any query.
+Please don't forget to specify pw_type as %p
 is replaced by password of pw_type form.
 
 Caution: 
@@ -157,6 +158,7 @@ replaced with NULL
 			  specified as module argument.
     timeout		- if specified pam-pgsql will wait for timeout
 			  seconds before giving up on db connection
+    custom_param        - custom parameter passed to the query in place of %c.
 
 There are also additional flags you can use:
     authtok		- see "use_first_pass"
