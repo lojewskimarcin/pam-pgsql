@@ -120,8 +120,6 @@ read_config_file(modopt_t *options) {
             options->debug = 1;
         } else if(!strcmp(buffer, "authtok_type")) {
             options->authtok_type = strdup(val);
-        } else if(!strcmp(buffer, "custom_param")) {
-            options->custom_param = strdup(val);
         }
 
     }
@@ -223,6 +221,8 @@ modopt_t * mod_options(int argc, const char **argv) {
                 modopt->debug = atoi(value);
             } else if( strcmp(option, "port") == 0 ) {
                 modopt->port = strdup(value);
+            } else if( strcmp(option, "custom_param") == 0 ) {
+                modopt->custom_param = strdup(value);
             }
 
         } else {
