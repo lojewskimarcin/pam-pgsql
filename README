@@ -139,7 +139,7 @@ replaced with NULL
                           debug output to syslog (takes no values)
     pw_type             - specifies the password encryption scheme, can be one
                           of 'clear', 'md5', 'sha1', 'crypt', 'crypt_md5',
-						  'md5_postgres' or 'function'. The difference between 'md5' and
+						  'md5_postgres', 'bcrypt' or 'function'. The difference between 'md5' and
 						  'crypt_md5' is that 'md5' uses libmhash for hashing
 						  while 'crypt_md5' uses crypt() with a special salt to
 						  select md5 hashing instead of DES. if one of 'crypt'
