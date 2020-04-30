@@ -24,6 +24,7 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 
+#include <crypt.h>
 #include <gcrypt.h>
 
 #include "backend_pgsql.h"
@@ -47,32 +48,32 @@ build_conninfo(modopt_t *options)
 
     /* SAFE */
 	 if(options->db) {
-   	 strncat(str, "dbname=", strlen("dbname="));
-   	 strncat(str, options->db, strlen(options->db));
+		strcat(str, "dbname=");
+		strncat(str, options->db, strlen(options->db));
 	 }
 
 	if(options->host) {
-		strncat(str, " host=", strlen(" host="));
+		strcat(str, " host=");
 		strncat(str, options->host, strlen(options->host));
 	}
 	if(options->port) {
-		strncat(str, " port=", strlen(" port="));
+		strcat(str, " port=");
 		strncat(str, options->port, strlen(options->port));
 	}    
 	if(options->timeout) {
-		strncat(str, " connect_timeout=", strlen(" connect_timeout="));
+		strcat(str, " connect_timeout=");
 		strncat(str, options->timeout, strlen(options->timeout));
 	}
 	if(options->user) {
-		strncat(str, " user=", strlen(" user="));
+		strcat(str, " user=");
 		strncat(str, options->user, strlen(options->user));
 	}
 	if(options->passwd) {
-		strncat(str, " password=", strlen(" password="));
+		strcat(str, " password=");
 		strncat(str, options->passwd, strlen(options->passwd));
 	}
 	if(options->sslmode) {
-		strncat(str, " sslmode=", strlen(" sslmode="));
+		strcat(str, " sslmode=");
 		strncat(str, options->sslmode, strlen(options->sslmode));
 	}
 
@@ -255,24 +256,34 @@ backend_authenticate(const char *service, const char *user, const char *passwd, 
 {
 	PGresult *res;
 	PGconn *conn;
-	int rc;
+	int rc, row_count;
 	char *tmp;
 
-	if(!(conn = db_connect(options)))
+	if (!(conn = db_connect(options)))
 		return PAM_AUTH_ERR;
 
 	DBGLOG("query: %s", options->query_auth);
 	rc = PAM_AUTH_ERR;	
-	if(pg_execParam(conn, &res, options->query_auth, service, user, passwd, rhost, options->custom_param) == PAM_SUCCESS) {
-		if(PQntuples(res) == 0) {
+	if (pg_execParam(conn, &res, options->query_auth, service, user, passwd, rhost, options->custom_param) == PAM_SUCCESS) {
+		row_count = PQntuples(res);
+		if (row_count == 0) {
 			rc = PAM_USER_UNKNOWN;
-		} else if (!PQgetisnull(res, 0, 0)) {
-			char *stored_pw = PQgetvalue(res, 0, 0);
-			if (options->pw_type == PW_FUNCTION) {
-				if (!strcmp(stored_pw, "t")) { rc = PAM_SUCCESS; }
-			} else {
-				if (!strcmp(stored_pw, (tmp = password_encrypt(options, user, passwd, stored_pw)))) rc = PAM_SUCCESS;
-				free (tmp);
+		} else {
+			for (int i = 0; i < row_count && rc != PAM_SUCCESS; i++) {
+				if (!PQgetisnull(res, i, 0)) {
+					char *stored_pw = PQgetvalue(res, i, 0);
+					if (options->pw_type == PW_FUNCTION) {
+						if (!strcmp(stored_pw, "t")) {
+							rc = PAM_SUCCESS;
+						}
+					} else {
+						tmp = password_encrypt(options, user, passwd, stored_pw);
+						if (!strcmp(stored_pw, tmp)) {
+							rc = PAM_SUCCESS;
+						}
+						free (tmp);
+					}
+				}
 			}
 		}
 		PQclear(res);
@@ -316,7 +327,7 @@ password_encrypt(modopt_t *options, const char *user, const char *pass, const ch
 			unsigned char hash[16] = { 0, }; /* 16 is the md5 block size */
 			int i;
 			s = (char *) malloc(36); /* 3 bytes for "md5" + 32 bytes for the hash + 1 byte for \0 */
-			strncpy(s, "md5", 3);
+			memcpy(s, "md5", 3);
 
 			size_t unencoded_length;
 			char *unencoded;
